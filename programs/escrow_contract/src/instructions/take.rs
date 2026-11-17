@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    token_2022::TransferChecked,
+    token_interface::{
+        close_account, transfer_checked, CloseAccount, Mint, TokenAccount, TokenInterface,
+    },
 };
 
 use crate::{error::EscrowError, state::Escrow};
@@ -34,7 +37,7 @@ pub struct Take<'info> {
         associated_token::authority=escrow,
         associated_token::token_program=token_program
     )]
-    pub vaul: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub vault: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
@@ -65,4 +68,63 @@ pub struct Take<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
+}
+
+impl<'info> Take<'info> {
+    fn transfer_to_maker(&mut self) -> Result<()> {
+        transfer_checked(
+            CpiContext::new(
+                self.token_program.key(),
+                TransferChecked {
+                    from: self.taker_ata_b.to_account_info(),
+                    mint: self.mint_b.to_account_info(),
+                    to: self.maker_ata_b.to_account_info(),
+                    authority: self.taker.to_account_info(),
+                },
+            ),
+            self.escrow.receive,
+            self.mint_b.decimals,
+        )?;
+        Ok(())
+    }
+
+    fn withdraw_and_close_vault(&mut self) -> Result<()> {
+        let maker_key = self.maker.key();
+        let seed_bytes = self.escrow.seed.to_le_bytes();
+        let bump = [self.escrow.bump];
+        let signer_seeds: [&[&[u8]]; 1] =
+            [&[b"escrow", maker_key.as_ref(), &seed_bytes[..], &bump]];
+
+        transfer_checked(
+            CpiContext::new_with_signer(
+                self.token_program.key(),
+                TransferChecked {
+                    from: self.vault.to_account_info(),
+                    mint: self.mint_a.to_account_info(),
+                    to: self.taker_ata_a.to_account_info(),
+                    authority: self.escrow.to_account_info(),
+                },
+                &signer_seeds,
+            ),
+            self.vault.amount,
+            self.mint_a.decimals,
+        )?;
+
+        close_account(CpiContext::new_with_signer(
+            self.token_program.key(),
+            CloseAccount {
+                account: self.vault.to_account_info(),
+                destination: self.maker.to_account_info(),
+                authority: self.escrow.to_account_info(),
+            },
+            &signer_seeds,
+        ))?;
+        Ok(())
+    }
+}
+
+pub fn handler(ctx: Context<Take>) -> Result<()> {
+    ctx.accounts.transfer_to_maker()?;
+    ctx.accounts.withdraw_and_close_vault()?;
+    Ok(())
 }
