@@ -1,15 +1,18 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{associated_token::AssociatedToken, token_interface::{Mint, TokenAccount, TokenInterface}};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{Mint, TokenAccount, TokenInterface},
+};
 
-use crate::{error::EscrowError,state::Escrow};
+use crate::{error::EscrowError, state::Escrow};
 
 #[derive(Accounts)]
-pub struct Take<'info>{
+pub struct Take<'info> {
     #[account(mut)]
-    pub taker:Signer<'info>,
+    pub taker: Signer<'info>,
 
     #[account(mut)]
-    pub maker:SystemAccount<'info>,
+    pub maker: SystemAccount<'info>,
 
     #[account(
         mut,
@@ -20,10 +23,10 @@ pub struct Take<'info>{
         has_one=mint_a @ EscrowError::InvalidMintA,
         has_one=mint_b @ EscrowError::InvalidMintB,
     )]
-    pub escrow:Box<Account<'info,Escrow>>,
+    pub escrow: Box<Account<'info, Escrow>>,
 
-    pub mint_a:Box<InterfaceAccount<'info,Mint>>,
-    pub mint_b:Box<InterfaceAccount<'info,Mint>>,
+    pub mint_a: Box<InterfaceAccount<'info, Mint>>,
+    pub mint_b: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
@@ -31,7 +34,7 @@ pub struct Take<'info>{
         associated_token::authority=escrow,
         associated_token::token_program=token_program
     )]
-    pub vaul:Box<InterfaceAccount<'info,TokenAccount>>,
+    pub vaul: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
@@ -40,7 +43,7 @@ pub struct Take<'info>{
         associated_token::authority=taker,
         associated_token::token_program=token_program,
     )]
-    pub taker_ata_a:Box<InterfaceAccount<'info,TokenAccount>>,
+    pub taker_ata_a: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -48,7 +51,7 @@ pub struct Take<'info>{
         associated_token::authority=taker,
         associated_token::token_program=token_program,
     )]
-    pub taker_ata_b:Box<InterfaceAccount<'info,TokenAccount>>,
+    pub taker_ata_b: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
@@ -57,9 +60,9 @@ pub struct Take<'info>{
         associated_token::authority=maker,
         associated_token::token_program=token_program,
     )]
-    pub maker_ata_b:Box<InterfaceAccount<'info,TokenAccount>>,
+    pub maker_ata_b: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub associated_token_program:Program<'info,AssociatedToken>,
-    pub token_program:Interface<'info,TokenInterface>,
-    pub system_program:Program<'info,System>
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
 }
