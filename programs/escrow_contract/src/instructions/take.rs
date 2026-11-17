@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_2022::TransferChecked,
     token_interface::{
         close_account, transfer_checked, CloseAccount, Mint, TokenAccount, TokenInterface,
+        TransferChecked,
     },
 };
 
@@ -89,11 +89,12 @@ impl<'info> Take<'info> {
     }
 
     fn withdraw_and_close_vault(&mut self) -> Result<()> {
-        let maker_key = self.maker.key();
-        let seed_bytes = self.escrow.seed.to_le_bytes();
-        let bump = [self.escrow.bump];
-        let signer_seeds: [&[&[u8]]; 1] =
-            [&[b"escrow", maker_key.as_ref(), &seed_bytes[..], &bump]];
+        let signer_seeds: [&[&[u8]]; 1] = [&[
+            b"escrow",
+            self.maker.to_account_info().key.as_ref(),
+            &self.escrow.seed.to_le_bytes()[..],
+            &[self.escrow.bump],
+        ]];
 
         transfer_checked(
             CpiContext::new_with_signer(
