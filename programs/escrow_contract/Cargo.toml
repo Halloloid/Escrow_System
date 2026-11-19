@@ -30,7 +30,10 @@ solana-message = "3.0.1"
 solana-transaction = "3.0.2"
 solana-signer = "3.0.0"
 solana-keypair = "3.0.1"
-
+anchor-litesvm = "0.4.0"
+litesvm-utils = "0.4.0"
+spl-associated-token-account = "8.0.0"
+spl-token = "9.0.0"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
