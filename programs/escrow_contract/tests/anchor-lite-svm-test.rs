@@ -21,7 +21,7 @@ fn test_escrow_make_and_take() {
     let taker = ctx.svm.create_funded_account(10_000_000_000).unwrap(); // 10 SOL
 
     let mint_a = ctx.svm.create_token_mint(&maker, 9).unwrap();
-    let mint_b = ctx.svm.create_token_mint(&maker, 9).unwrap();
+    let mint_b = ctx.svm.create_token_mint(&taker, 9).unwrap();
 
     // Maker Account for Mint A
     let maker_ata_a = ctx
